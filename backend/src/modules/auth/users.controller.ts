@@ -6,6 +6,7 @@ import {
   HttpCode,
   HttpStatus,
   Param,
+  ParseUUIDPipe,
   Patch,
   Post,
 } from '@nestjs/common';
@@ -42,17 +43,18 @@ export class UsersController {
 
   @Post()
   @ApiOperation({ summary: 'Create an account with a role (admin only).' })
-  async create(@Body() dto: CreateUserDto): Promise<UserResponseDto> {
+  create(@Body() dto: CreateUserDto): Promise<UserResponseDto> {
     // Hashing belongs to the auth module, so the service takes the hash.
-    const passwordHash = await this.authService.hashPassword(dto.password);
-    const user = await this.usersService.create(dto.email, passwordHash, dto.role);
-    return user;
+    return this.authService
+      .hashPassword(dto.password)
+      .then((hash) => this.usersService.create(dto.email, hash, dto.role));
   }
 
   @Patch(':id/role')
   @ApiOperation({ summary: "Change an account's role (admin only)." })
-  async updateRole(
-    @Param('id') id: string,
+  updateRole(
+    // Validated so a malformed id is a 400 rather than a Prisma failure.
+    @Param('id', new ParseUUIDPipe()) id: string,
     @Body() dto: UpdateUserRoleDto,
   ): Promise<UserResponseDto> {
     return this.usersService.updateRole(id, dto.role);
@@ -61,7 +63,7 @@ export class UsersController {
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Delete an account (admin only).' })
-  remove(@Param('id') id: string): Promise<void> {
+  remove(@Param('id', new ParseUUIDPipe()) id: string): Promise<void> {
     return this.usersService.remove(id);
   }
 }
