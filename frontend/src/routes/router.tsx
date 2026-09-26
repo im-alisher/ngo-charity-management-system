@@ -13,7 +13,9 @@ const LoginPage = lazy(() => import('@/pages/login-page').then((m) => ({ default
 const DashboardPage = lazy(() =>
   import('@/pages/dashboard-page').then((m) => ({ default: m.DashboardPage })),
 );
-const DonorsPage = lazy(() => import('@/pages/donors-page').then((m) => ({ default: m.DonorsPage })));
+const DonorsPage = lazy(() =>
+  import('@/pages/donors-page').then((m) => ({ default: m.DonorsPage })),
+);
 const BeneficiariesPage = lazy(() =>
   import('@/pages/beneficiaries-page').then((m) => ({ default: m.BeneficiariesPage })),
 );

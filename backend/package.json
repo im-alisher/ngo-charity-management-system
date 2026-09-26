@@ -16,8 +16,14 @@
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "prisma:generate": "prisma generate",
     "prisma:format": "prisma format",
+    "prisma:validate": "prisma validate",
+    "prisma:migrate:dev": "prisma migrate dev",
+    "prisma:migrate:deploy": "prisma migrate deploy",
+    "prisma:migrate:status": "prisma migrate status",
+    "prisma:studio": "prisma studio",
     "user:create": "tsx src/scripts/create-user.ts",
-    "user:list": "tsx src/scripts/list-users.ts"
+    "user:list": "tsx src/scripts/list-users.ts",
+    "format:check": "prettier --check ."
   },
   "dependencies": {
     "@nestjs/common": "12.1.0",
