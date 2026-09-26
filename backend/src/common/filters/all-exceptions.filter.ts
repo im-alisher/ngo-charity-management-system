@@ -20,6 +20,21 @@ export interface ErrorResponseBody {
 }
 
 /**
+ * Prisma error codes that mean "the database could not be used", as opposed to
+ * "the request was wrong". These become 503 so callers know to retry.
+ */
+const DATABASE_UNAVAILABLE_CODES = new Set([
+  'P1000', // authentication failed
+  'P1001', // can't reach database server
+  'P1002', // database server timed out
+  'P1003', // can't establish a connection
+  'P1008', // operation timed out
+  'P1010', // user was denied access
+  'P1011', // TLS connection error
+  'P1017', // server has closed the connection
+]);
+
+/**
  * Single place where every error becomes a predictable JSON payload.
  *
  * Handles the three sources of failure in this API:
@@ -160,6 +175,16 @@ export class AllExceptionsFilter implements ExceptionFilter {
           error: 'Bad Request',
         };
       default:
+        // Connection-level failures are the database being unavailable, not a
+        // bad request, so the client should retry rather than give up.
+        if (DATABASE_UNAVAILABLE_CODES.has(exception.code)) {
+          return {
+            status: HttpStatus.SERVICE_UNAVAILABLE,
+            message: 'The database is currently unavailable. Please try again shortly.',
+            error: 'Service Unavailable',
+          };
+        }
+
         return {
           status: HttpStatus.INTERNAL_SERVER_ERROR,
           message: 'The database rejected the request.',

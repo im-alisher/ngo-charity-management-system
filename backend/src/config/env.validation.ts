@@ -1,4 +1,4 @@
-import type { NodeEnv } from './config.types.js';
+import type { JwtExpiresIn } from './config.types.js';
 
 export interface RawEnv {
   NODE_ENV?: string;
@@ -10,20 +10,21 @@ export interface RawEnv {
   JWT_EXPIRES_IN?: string;
 }
 
-export type ValidatedEnv = Required<Omit<RawEnv, never>>;
-
-const NODE_ENVS: NodeEnv[] = ['development', 'production', 'test'];
+const NODE_ENVS = ['development', 'production', 'test'] as const;
 
 const DEFAULTS = {
   PORT: 3000,
   API_PREFIX: 'api',
   JWT_EXPIRES_IN: '1d',
   CORS_ORIGIN: 'http://localhost:5173',
-  NODE_ENV: 'development' as NodeEnv,
+  NODE_ENV: 'development',
 };
 
 /** Minimum secret length enforced in production. */
 const MIN_SECRET_LENGTH = 32;
+
+/** `30m`, `12h`, `7d`, `2w` ... — the time-span form `jsonwebtoken` accepts. */
+const DURATION_PATTERN = /^\d+(?:\.\d+)?(?:ms|s|m|h|d|w|y)$/i;
 
 function parsePort(raw: string | undefined): number {
   if (raw === undefined || raw.trim() === '') return DEFAULTS.PORT;
@@ -42,13 +43,36 @@ function parseOrigins(raw: string | undefined): string[] {
     .filter((origin) => origin.length > 0);
 }
 
-function parseNodeEnv(raw: string | undefined): NodeEnv {
-  if (raw === undefined || raw.trim() === '') return DEFAULTS.NODE_ENV;
+function parseNodeEnv(raw: string | undefined): (typeof NODE_ENVS)[number] {
+  if (raw === undefined || raw.trim() === '')
+    return DEFAULTS.NODE_ENV as (typeof NODE_ENVS)[number];
 
-  if (!NODE_ENVS.includes(raw as NodeEnv)) {
+  if (!NODE_ENVS.includes(raw as (typeof NODE_ENVS)[number])) {
     throw new Error(`NODE_ENV must be one of ${NODE_ENVS.join(', ')}, received "${raw}".`);
   }
-  return raw as NodeEnv;
+  return raw as (typeof NODE_ENVS)[number];
+}
+
+/**
+ * Validates a token lifetime and narrows it to the type `jsonwebtoken` expects.
+ *
+ * Doing the check here means no `as` cast is needed at the point of use, and a
+ * typo in `JWT_EXPIRES_IN` fails at startup rather than on the first login.
+ */
+export function parseJwtExpiresIn(raw: string | undefined): JwtExpiresIn {
+  const value = raw?.trim() || DEFAULTS.JWT_EXPIRES_IN;
+
+  if (/^\d+$/.test(value)) {
+    return Number(value);
+  }
+
+  if (!DURATION_PATTERN.test(value)) {
+    throw new Error(
+      `JWT_EXPIRES_IN must be a number of seconds or a time span such as 30m, 12h or 7d, received "${value}".`,
+    );
+  }
+
+  return value as JwtExpiresIn;
 }
 
 /**
@@ -65,7 +89,7 @@ export function validateEnv(source: RawEnv = process.env): Required<RawEnv> {
       return parseNodeEnv(source.NODE_ENV);
     } catch (error) {
       errors.push((error as Error).message);
-      return DEFAULTS.NODE_ENV;
+      return DEFAULTS.NODE_ENV as (typeof NODE_ENVS)[number];
     }
   })();
 
@@ -90,7 +114,15 @@ export function validateEnv(source: RawEnv = process.env): Required<RawEnv> {
     errors.push(`JWT_SECRET must be at least ${MIN_SECRET_LENGTH} characters in production.`);
   }
 
-  const jwtExpiresIn = source.JWT_EXPIRES_IN?.trim() || DEFAULTS.JWT_EXPIRES_IN;
+  const jwtExpiresIn = (() => {
+    try {
+      return parseJwtExpiresIn(source.JWT_EXPIRES_IN);
+    } catch (error) {
+      errors.push((error as Error).message);
+      return DEFAULTS.JWT_EXPIRES_IN;
+    }
+  })();
+
   const apiPrefix = source.API_PREFIX?.trim() || DEFAULTS.API_PREFIX;
   const corsOrigin = source.CORS_ORIGIN?.trim() || DEFAULTS.CORS_ORIGIN;
 
@@ -105,7 +137,7 @@ export function validateEnv(source: RawEnv = process.env): Required<RawEnv> {
     DATABASE_URL: databaseUrl,
     CORS_ORIGIN: corsOrigin,
     JWT_SECRET: jwtSecret,
-    JWT_EXPIRES_IN: jwtExpiresIn,
+    JWT_EXPIRES_IN: String(jwtExpiresIn),
   };
 }
 

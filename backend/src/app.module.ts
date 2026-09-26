@@ -7,9 +7,10 @@ import { AllExceptionsFilter } from './common/filters/all-exceptions.filter.js';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard.js';
 import { PrismaModule } from './common/prisma/prisma.module.js';
 import { AppConfigModule } from './config/config.module.js';
+import { AuthModule } from './modules/auth/auth.module.js';
 
 @Module({
-  imports: [AppConfigModule, CommonModule, PrismaModule],
+  imports: [AppConfigModule, CommonModule, PrismaModule, AuthModule],
   controllers: [AppController],
   providers: [
     // Deny by default: every route requires a valid token unless marked @Public().

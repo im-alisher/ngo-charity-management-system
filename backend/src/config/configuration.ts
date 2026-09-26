@@ -1,7 +1,7 @@
 import { registerAs } from '@nestjs/config';
 
 import type { AppConfig, JwtConfig } from './config.types.js';
-import { parseOrigins } from './env.validation.js';
+import { parseJwtExpiresIn, parseOrigins } from './env.validation.js';
 
 export const appConfig = registerAs('app', (): AppConfig => ({
   nodeEnv: (process.env.NODE_ENV ?? 'development') as AppConfig['nodeEnv'],
@@ -18,7 +18,7 @@ export const appConfig = registerAs('app', (): AppConfig => ({
 
 export const jwtConfig = registerAs('jwt', (): JwtConfig => ({
   secret: process.env.JWT_SECRET ?? '',
-  expiresIn: process.env.JWT_EXPIRES_IN ?? '1d',
+  expiresIn: parseJwtExpiresIn(process.env.JWT_EXPIRES_IN),
 }));
 
 export const configurations = [appConfig, jwtConfig];
