@@ -22,6 +22,9 @@ manage beneficiaries and report on giving.
 - [Project layout](#project-layout)
 - [Design notes](#design-notes)
 - [Troubleshooting](#troubleshooting)
+- [Contributing](#contributing)
+- [Security](#security)
+- [License](#license)
 
 ---
 
@@ -140,9 +143,32 @@ npm --prefix backend run user:create -- admin@example.org "a-strong-password"
 npm --prefix backend run user:list
 ```
 
-`user:create` requires a valid email and a password of at least 8 characters, and
+Accounts are created as `ADMIN` by default. Pass `--role=` for a lesser
+account, which is the usual choice for day-to-day use:
+
+```bash
+npm --prefix backend run user:create -- staff@example.org "a-strong-password" --role=STAFF
+npm --prefix backend run user:create -- auditor@example.org "a-strong-password" --role=VIEWER
+```
+
+| Role     | Can do                                                     |
+| -------- | ---------------------------------------------------------- |
+| `ADMIN`  | Everything, plus creating, changing and deleting accounts    |
+| `STAFF`  | Create, edit and delete donors, donations and beneficiaries |
+| `VIEWER` | Read-only access to every screen                             |
+
+The role travels inside the JWT, so changing someone's role takes effect the
+next time they sign in. An account with no role claim, which means a token
+issued before roles existed, is treated as `VIEWER`.
+
+`user:create` requires a valid email and a password of 8 to 72 characters, and
 refuses to overwrite an existing address, so it is safe to run twice. It prompts
 for a hidden password when run with no arguments.
+
+`POST /api/users`, `PATCH /api/users/:id/role` and `DELETE /api/users/:id` do
+the same job over HTTP and require `ADMIN`. The system refuses to demote or
+delete the final administrator, which would leave nobody able to manage
+accounts.
 
 ## Running the apps
 
@@ -205,6 +231,15 @@ login requires an `Authorization: Bearer <token>` header.
 | ------ | ------------- | ---- | ---------------------------------- |
 | POST   | `/auth/login` | no   | Sign in, returns a JWT and profile |
 | GET    | `/auth/me`    | yes  | The currently signed-in user       |
+
+**Users** — every route requires the `ADMIN` role
+
+| Method | Path                 | Auth  | Description                                    |
+| ------ | -------------------- | ----- | ---------------------------------------------- |
+| GET    | `/users`             | admin | List every account                             |
+| POST   | `/users`             | admin | Create an account with a role                  |
+| PATCH  | `/users/:id/role`    | admin | Change an account's role                       |
+| DELETE | `/users/:id`         | admin | Delete an account; the last admin is protected |
 
 **Donors**
 
@@ -304,7 +339,7 @@ with 400.
 
 ```
 User
-  id, email (unique), passwordHash, createdAt, updatedAt
+  id, email (unique), password, role, createdAt, updatedAt
 
 Donor
   id, fullName, email, phone, address, createdAt, updatedAt
@@ -317,6 +352,8 @@ Beneficiary
   id, fullName, phone, category, status, createdAt, updatedAt
 ```
 
+`User.role` is `ADMIN | STAFF | VIEWER` and defaults to `VIEWER`. `password`
+stores a bcrypt hash and is never returned by the API.
 `Beneficiary.category` is `FOOD | EDUCATION | MEDICAL`.
 `Beneficiary.status` is `ACTIVE | INACTIVE`.
 
@@ -433,10 +470,31 @@ reset, or raise the limit in `backend/src/modules/auth/auth.module.ts`
 (global) or the `@Throttle` decorator in
 `backend/src/modules/auth/auth.controller.ts` (login).
 
-**Driver errors after changing `schema.prisma`** — the generated client is
-stale. Run `npm run prisma:generate`, then restart the dev server.
+**`403 Forbidden` on a save** — the signed-in account is a `VIEWER`, which is
+read-only. Sign in with a `STAFF` or `ADMIN` account. Note the web app does not
+yet hide the write buttons for viewers, so the request is what gets refused.
 
 **Changes to the schema are not applied** — remember `prisma migrate dev`
 updates both the database and the migration history. Use
 `npm --prefix backend run prisma:migrate:status` to see which migrations the
 database has applied.
+
+## Contributing
+
+Bug reports and pull requests are welcome. See
+[CONTRIBUTING.md](CONTRIBUTING.md) for the local setup and the checks every
+change is expected to pass.
+
+## Security
+
+Please do not report vulnerabilities through public issues. See
+[SECURITY.md](SECURITY.md) for how to report one privately.
+
+## License
+
+Released under the [MIT License](LICENSE).
+
+This project is a starting point for a charity's own use. Review the
+configuration, permissions, and data-handling requirements before adopting it
+for real donor records.
+
