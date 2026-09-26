@@ -1,0 +1,90 @@
+// Prisma schema for the NGO Charity Management System.
+//
+// NOTE FOR THE DEVELOPER:
+//   This schema is intentionally NOT applied to any database yet.
+//   Run the migration yourself when you are ready:
+//     npx prisma migrate dev --name init
+//   and then seed the first admin user with: npm run user:create
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// The connection string is intentionally NOT declared here.
+// As of Prisma 7 it lives in `prisma.config.ts` (Prisma CLI) and is passed to
+// the client through a driver adapter (see src/common/prisma/prisma.service.ts).
+datasource db {
+  provider = "postgresql"
+}
+
+/// Admin / staff account used to sign in to the dashboard.
+model User {
+  id        String   @id @default(uuid()) @db.Uuid
+  email     String   @unique
+  password  String
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("users")
+}
+
+/// A person or organisation that gives money to the charity.
+model Donor {
+  id        String   @id @default(uuid()) @db.Uuid
+  fullName  String   @map("full_name") @db.VarChar(160)
+  email     String?  @db.VarChar(180)
+  phone     String?  @db.VarChar(40)
+  address   String?  @db.VarChar(400)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  donations Donation[]
+
+  @@index([fullName])
+  @@index([createdAt])
+  @@map("donors")
+}
+
+enum BeneficiaryCategory {
+  FOOD
+  EDUCATION
+  MEDICAL
+}
+
+enum BeneficiaryStatus {
+  ACTIVE
+  INACTIVE
+}
+
+/// A person receiving support from the charity.
+model Beneficiary {
+  id        String               @id @default(uuid()) @db.Uuid
+  fullName  String               @map("full_name") @db.VarChar(160)
+  phone     String?              @db.VarChar(40)
+  category  BeneficiaryCategory
+  status    BeneficiaryStatus    @default(ACTIVE)
+  createdAt DateTime             @default(now()) @map("created_at")
+  updatedAt DateTime             @updatedAt @map("updated_at")
+
+  @@index([fullName])
+  @@index([category])
+  @@index([status])
+  @@map("beneficiaries")
+}
+
+/// A single donation received from a donor.
+model Donation {
+  id           String   @id @default(uuid()) @db.Uuid
+  donorId      String   @map("donor_id") @db.Uuid
+  amount       Decimal  @db.Decimal(14, 2)
+  donationDate DateTime @map("donation_date") @db.Date
+  notes        String?  @db.VarChar(1000)
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  donor Donor @relation(fields: [donorId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@index([donorId])
+  @@index([donationDate])
+  @@map("donations")
+}
