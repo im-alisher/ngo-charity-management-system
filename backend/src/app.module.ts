@@ -12,6 +12,7 @@ import { BeneficiariesModule } from './modules/beneficiaries/beneficiaries.modul
 import { DashboardModule } from './modules/dashboard/dashboard.module.js';
 import { DonationsModule } from './modules/donations/donations.module.js';
 import { DonorsModule } from './modules/donors/donors.module.js';
+import { ReportsModule } from './modules/reports/reports.module.js';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { DonorsModule } from './modules/donors/donors.module.js';
     BeneficiariesModule,
     DonationsModule,
     DashboardModule,
+    ReportsModule,
   ],
   controllers: [AppController],
   providers: [
