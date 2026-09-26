@@ -5,7 +5,7 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from '../app.module.js';
 import { UsersService } from '../modules/auth/users.service.js';
 
-/** Lists the admin accounts that can sign in. Never prints password hashes. */
+/** Lists the accounts that can sign in. Never prints password hashes. */
 async function main(): Promise<void> {
   const app = await NestFactory.createApplicationContext(AppModule, {
     logger: ['error', 'warn'],
@@ -20,9 +20,14 @@ async function main(): Promise<void> {
       return;
     }
 
+    // Padded so the role and email columns line up for several accounts.
+    const width = Math.max(...users.map((user) => user.email.length));
+
     console.log(`${users.length} user(s):`);
     for (const user of users) {
-      console.log(`  ${user.email}  created ${user.createdAt.toISOString()}  (${user.id})`);
+      console.log(
+        `  ${user.email.padEnd(width)}  ${user.role.padEnd(6)}  created ${user.createdAt.toISOString()}  (${user.id})`,
+      );
     }
   } finally {
     await app.close();

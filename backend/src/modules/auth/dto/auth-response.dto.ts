@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { UserRole } from '@prisma/client';
 
 export class UserResponseDto {
   @ApiProperty({ format: 'uuid' })
@@ -6,6 +7,9 @@ export class UserResponseDto {
 
   @ApiProperty({ example: 'admin@charity.org' })
   email!: string;
+
+  @ApiProperty({ enum: UserRole, description: 'Access level of the account.' })
+  role!: UserRole;
 
   @ApiProperty({ format: 'date-time' })
   createdAt!: Date;

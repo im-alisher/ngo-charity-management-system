@@ -23,12 +23,35 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
       );
     }
 
-    super({ adapter: new PrismaPg({ connectionString }) });
+    super({
+      adapter: new PrismaPg({
+        connectionString,
+        // A hosted database is often several time zones away, so the very first
+        // connection also pays a TLS handshake. Without these generous limits a
+        // cold start fails with "Unable to start a transaction in the given
+        // time" even though the database is perfectly healthy.
+        connectionTimeoutMillis: 30_000,
+        max: 10,
+      }),
+      transactionOptions: {
+        maxWait: 20_000,
+        timeout: 30_000,
+      },
+    });
   }
 
   async onModuleInit(): Promise<void> {
     await this.$connect();
-    this.logger.log('Connected to PostgreSQL');
+
+    // Establish a real pooled connection now, so the first user request does
+    // not pay the round-trip cost of opening one. A failure here is not fatal:
+    // the exception filter reports an unreachable database per request.
+    try {
+      await this.$queryRaw`SELECT 1`;
+      this.logger.log('Connected to PostgreSQL');
+    } catch {
+      this.logger.warn('Connected but the first query failed; the database may be unreachable.');
+    }
   }
 
   async onModuleDestroy(): Promise<void> {

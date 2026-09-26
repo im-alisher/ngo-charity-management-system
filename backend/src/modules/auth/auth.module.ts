@@ -5,7 +5,9 @@ import { JwtModule } from '@nestjs/jwt';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 
 import type { JwtConfig } from '../../config/config.types.js';
+import { RolesGuard } from '../../common/guards/roles.guard.js';
 import { AuthController } from './auth.controller.js';
+import { UsersController } from './users.controller.js';
 import { AuthService } from './auth.service.js';
 import { UsersService } from './users.service.js';
 
@@ -26,8 +28,14 @@ import { UsersService } from './users.service.js';
     // tighten it further with @Throttle().
     ThrottlerModule.forRoot([{ name: 'default', ttl: 60_000, limit: 300 }]),
   ],
-  controllers: [AuthController],
-  providers: [AuthService, UsersService, { provide: APP_GUARD, useClass: ThrottlerGuard }],
+  controllers: [AuthController, UsersController],
+  providers: [
+    AuthService,
+    UsersService,
+    { provide: APP_GUARD, useClass: ThrottlerGuard },
+    // Order matters: RolesGuard reads the user that JwtAuthGuard attached.
+    { provide: APP_GUARD, useClass: RolesGuard },
+  ],
   exports: [UsersService, AuthService],
 })
 export class AuthModule {}

@@ -50,7 +50,8 @@ export class AuthService {
       throw new UnauthorizedException('Invalid email or password.');
     }
 
-    const payload: JwtPayload = { sub: user.id, email: user.email };
+    // The role travels in the token so authorisation needs no extra query.
+    const payload: JwtPayload = { sub: user.id, email: user.email, role: user.role };
     const accessToken = await this.jwtService.signAsync(payload);
     const jwt = this.configService.getOrThrow<JwtConfig>('jwt');
 

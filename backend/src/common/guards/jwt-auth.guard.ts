@@ -1,6 +1,7 @@
 import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { JwtService } from '@nestjs/jwt';
+import { UserRole } from '@prisma/client';
 import type { Request } from 'express';
 
 import { IS_PUBLIC_KEY } from '../decorators/public.decorator.js';
@@ -40,7 +41,11 @@ export class JwtAuthGuard implements CanActivate {
     try {
       const payload = await this.jwtService.verifyAsync<JwtPayload>(token);
 
-      request.user = { id: payload.sub, email: payload.email };
+      // A token issued before roles existed has no role claim. It is treated as
+      // VIEWER, the least privileged level, so old tokens can never widen access.
+      const role = payload.role ?? UserRole.VIEWER;
+
+      request.user = { id: payload.sub, email: payload.email, role };
       return true;
     } catch {
       throw new UnauthorizedException('The access token is invalid or has expired.');

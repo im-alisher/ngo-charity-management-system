@@ -18,10 +18,24 @@ datasource db {
 }
 
 /// Admin / staff account used to sign in to the dashboard.
+/// Access level of a user account.
+///
+/// The default is `VIEWER` so an account created without an explicit role
+/// cannot change data.
+enum UserRole {
+  /// Full access, including user management.
+  ADMIN
+  /// May create, edit and delete records.
+  STAFF
+  /// Read-only access.
+  VIEWER
+}
+
 model User {
   id        String   @id @default(uuid()) @db.Uuid
   email     String   @unique
   password  String
+  role      UserRole @default(VIEWER)
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 

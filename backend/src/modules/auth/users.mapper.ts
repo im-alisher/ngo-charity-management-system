@@ -7,6 +7,7 @@ export function toPublicUser(user: User): UserResponseDto {
   return {
     id: user.id,
     email: user.email,
+    role: user.role,
     createdAt: user.createdAt,
   };
 }
