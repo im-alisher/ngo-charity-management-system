@@ -6,10 +6,13 @@ manage beneficiaries and report on giving.
 - **Backend** — NestJS 12, Prisma 7, PostgreSQL, JWT authentication, Swagger
 - **Frontend** — React 19, TypeScript 6, Vite 8, Tailwind CSS 3, TanStack Query
 
----
+## Preview
+
+![The dashboard, showing donation totals, recent donations and a breakdown by beneficiary category](assets/preview.png)
 
 ## Contents
 
+- [Preview](#preview)
 - [Requirements](#requirements)
 - [Quick start](#quick-start)
 - [Environment variables](#environment-variables)
@@ -400,6 +403,10 @@ TypeScript client use `camelCase`.
 │       ├── routes/              # router and route guards
 │       └── types/               # API types shared by the app
 ├── package.json                 # workspace-level scripts
+├── assets/                      # images used by this README
+├── CONTRIBUTING.md
+├── CODE_OF_CONDUCT.md
+├── SECURITY.md
 └── README.md
 ```
 
