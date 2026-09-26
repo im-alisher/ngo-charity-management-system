@@ -10,9 +10,6 @@ import type { DonorDonationHistoryItemDto, DonorResponseDto } from './dto/donor-
 import type { UpdateDonorDto } from './dto/update-donor.dto.js';
 import { toDonationHistoryItem, toDonorResponse } from './donors.mapper.js';
 
-/** Fields scanned when a `search` term is supplied. */
-const SEARCHABLE_FIELDS = ['fullName', 'email', 'phone'] as const;
-
 @Injectable()
 export class DonorsService {
   constructor(private readonly prisma: PrismaService) {}
@@ -80,17 +77,19 @@ export class DonorsService {
 
   /**
    * Case-insensitive `contains` search across name, email and phone.
-   * Blank values are ignored so an empty search box behaves like no filter.
+   * A blank search term behaves like no filter at all.
    */
   private buildSearchFilter(search?: string): Prisma.DonorWhereInput | undefined {
     const term = search?.trim();
     if (!term) return undefined;
 
     return {
-      OR: SEARCHABLE_FIELDS.map((field) => ({
-        [field]: { contains: term, mode: 'insensitive' },
-      })),
-    } satisfies Prisma.DonorWhereInput;
+      OR: [
+        { fullName: { contains: term, mode: 'insensitive' } },
+        { email: { contains: term, mode: 'insensitive' } },
+        { phone: { contains: term, mode: 'insensitive' } },
+      ],
+    };
   }
 
   private toCreateData(dto: CreateDonorDto): Prisma.DonorCreateInput {

@@ -8,10 +8,18 @@ import { JwtAuthGuard } from './common/guards/jwt-auth.guard.js';
 import { PrismaModule } from './common/prisma/prisma.module.js';
 import { AppConfigModule } from './config/config.module.js';
 import { AuthModule } from './modules/auth/auth.module.js';
+import { BeneficiariesModule } from './modules/beneficiaries/beneficiaries.module.js';
 import { DonorsModule } from './modules/donors/donors.module.js';
 
 @Module({
-  imports: [AppConfigModule, CommonModule, PrismaModule, AuthModule, DonorsModule],
+  imports: [
+    AppConfigModule,
+    CommonModule,
+    PrismaModule,
+    AuthModule,
+    DonorsModule,
+    BeneficiariesModule,
+  ],
   controllers: [AppController],
   providers: [
     // Deny by default: every route requires a valid token unless marked @Public().
