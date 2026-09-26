@@ -9,6 +9,7 @@ import { PrismaModule } from './common/prisma/prisma.module.js';
 import { AppConfigModule } from './config/config.module.js';
 import { AuthModule } from './modules/auth/auth.module.js';
 import { BeneficiariesModule } from './modules/beneficiaries/beneficiaries.module.js';
+import { DashboardModule } from './modules/dashboard/dashboard.module.js';
 import { DonationsModule } from './modules/donations/donations.module.js';
 import { DonorsModule } from './modules/donors/donors.module.js';
 
@@ -21,6 +22,7 @@ import { DonorsModule } from './modules/donors/donors.module.js';
     DonorsModule,
     BeneficiariesModule,
     DonationsModule,
+    DashboardModule,
   ],
   controllers: [AppController],
   providers: [
